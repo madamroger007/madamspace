@@ -31,7 +31,7 @@ const services = [
 
 const YELLOW_ACCENT = "#e1ff01";
 
-export default function FeaturesDetail() {
+export default function AboutUsDetail() {
     return (
         <div className="overflow-hidden">
             {/* Header Area */}

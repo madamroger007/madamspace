@@ -2,13 +2,13 @@
 
 import React from "react";
 import Image from "next/image";
-import { MoveRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const deviceData = [
     {
         name: "Desktop View",
         image: "/hero-nft.png",
+        videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Example video
         frameClass: "w-full md:w-[600px] aspect-[16/10] rounded-[24px]",
         innerClass: "rounded-[20px]",
         bezel: "p-2 bg-white/10"
@@ -29,7 +29,22 @@ const deviceData = [
     }
 ];
 
+const getYouTubeEmbedUrl = (url: string, isPlaying: boolean) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    const videoId = (match && match[2].length === 11) ? match[2] : null;
+
+    if (!videoId) return null;
+
+    if (isPlaying) {
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=1&modestbranding=1`;
+    }
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`;
+};
+
 export default function DevicePreview() {
+    const [playingName, setPlayingName] = React.useState<string | null>(null);
+
     return (
         <div className="overflow-hidden">
             <div className="text-center mb-24">
@@ -53,17 +68,48 @@ export default function DevicePreview() {
                         className="flex flex-col items-center group w-full sm:w-auto"
                     >
                         {/* Device Mockup */}
-                        <div className={`relative ${device.frameClass} ${device.bezel} border border-white/10 shadow-2xl glass-card transition-transform duration-500 lg:group-hover:-translate-y-4 mx-auto max-w-[90vw] md:max-w-none`}>
+                        <div
+                            className={`relative ${device.frameClass} ${device.bezel} border border-white/10 shadow-2xl glass-card transition-transform duration-500 lg:group-hover:-translate-y-4 mx-auto max-w-[90vw] md:max-w-none cursor-pointer`}
+                            onClick={() => {
+                                if (device.videoUrl) {
+                                    setPlayingName(playingName === device.name ? null : device.name);
+                                }
+                            }}
+                        >
                             <div className={`relative w-full h-full ${device.innerClass} overflow-hidden bg-black`}>
-                                <Image
-                                    src={device.image}
-                                    alt={device.name}
-                                    fill
-                                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                                />
+                                {device.videoUrl && (playingName === device.name || playingName === null) ? (
+                                    <div className="relative w-full h-full">
+                                        <iframe
+                                            src={getYouTubeEmbedUrl(device.videoUrl, playingName === device.name) || ""}
+                                            className="absolute inset-0 w-full h-full border-0"
+                                            allow="autoplay; encrypted-media"
+                                            allowFullScreen
+                                        />
+                                        {playingName !== device.name && (
+                                            <div className="absolute inset-0 bg-transparent z-10" />
+                                        )}
+                                    </div>
+                                ) : (
+                                    <Image
+                                        src={device.image}
+                                        alt={device.name}
+                                        fill
+                                        className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                                    />
+                                )}
 
                                 {/* Overlay Screen Shine */}
-                                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/10 pointer-events-none" />
+                                <div className="absolute inset-0  pointer-events-none" />
+
+                                {device.videoUrl && playingName !== device.name && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                        <div className="w-12 h-12 rounded-full bg-neon-blue/80 flex items-center justify-center text-white shadow-lg">
+                                            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Device Accents (Buttons/Sensors) */}

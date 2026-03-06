@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export default function Web3Background() {
+export default function BackgroundLayout() {
     return (
         <div className="fixed inset-0 -z-50 pointer-events-none overflow-hidden">
             {/* Base Deep Space Gradient */}

@@ -1,24 +1,47 @@
 "use client";
-
-import React from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { useAgent } from "./agent/AgentContext";
-import FireEffect from "./FireEffect";
-import InteractiveStack from "./InteractiveStack";
+import InteractiveStack, { CardData } from "./card/InteractiveStack";
+
+const cardsData: CardData[] = [
+    {
+        id: 1,
+        title: "Cyber Mongkey #132",
+        image: "/hero-nft.png",
+        price: "5 ETH",
+        videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        timeLeft: "4 Days left",
+        likes: "140"
+    },
+    {
+        id: 2,
+        title: "Neon Matrix #45",
+        image: "/nft-card-1.png",
+        price: "3.2 ETH",
+        videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        timeLeft: "2 Days left",
+        likes: "85"
+    },
+    {
+        id: 3,
+        title: "Future Soul #99",
+        image: "/nft-card-1.png",
+        videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        price: "4.8 ETH",
+        timeLeft: "6 Days left",
+        likes: "210"
+    }
+];
 
 // ... (stats definition)
 
 const stats = [
-    { value: "55k", label: "our active user" },
-    { value: "47k", label: "our Artwork" },
-    { value: "42k", label: "Available Artist" },
-    { value: "42k", label: "our Products" },
+    { value: "55+", label: "our consumer" },
+    { value: "10+", label: "our image" },
+    { value: "10+", label: "our video" },
+    { value: "10+", label: "our web" },
 ];
 
 export default function HeroSection() {
-    const { customizations } = useAgent();
-
     return (
         <div className="relative overflow-hidden">
             {/* Background Glows */}
@@ -34,19 +57,21 @@ export default function HeroSection() {
                         transition={{ duration: 0.8 }}
                         className="text-center lg:text-left"
                     >
-                        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-syne font-bold leading-[1.1] mb-8 flex flex-wrap items-center justify-center lg:justify-start">
-                            <span>Create NFTs</span>
-                            <div className="slanted-lines mx-4">
-                                <div className="slanted-line" />
-                                <div className="slanted-line opacity-70" />
-                                <div className="slanted-line opacity-40" />
+                        <h1 className="text-4xl md:text-5xl font-syne font-bold leading-[1.1] mb-8 flex flex-wrap items-center justify-center lg:justify-start">
+                            <div className="flex items-center gap-2 w-full">
+                                <span>ArtWork</span>
+                                <div className="slanted-lines mx-4">
+                                    <div className="slanted-line" />
+                                    <div className="slanted-line opacity-70" />
+                                    <div className="slanted-line opacity-40" />
+                                </div>
                             </div>
                             <br className="hidden lg:block" />
-                            <span>Artwork And Sell</span>
+                            <span>Improve Your Design</span>
                         </h1>
 
                         <p className="text-white/50 text-sm md:text-base leading-relaxed mb-10 md:mb-12 max-w-xl mx-auto lg:mx-0 font-space">
-                            NFT lets you financially support artists you like, in nibh lacus cursus eget. Purus gravida vivamus fermentum tristique fermentum orci nibh pellentesque.
+                            We could help to improve and optimize existing designs by refining layouts, colors, typography, and user interface elements. Our service focuses on creating modern, responsive, and visually appealing designs that enhance usability and user experience
                         </p>
 
                         <button className="poly-button font-syne text-base md:text-lg uppercase tracking-wider mx-auto lg:mx-0">
@@ -61,7 +86,8 @@ export default function HeroSection() {
                         transition={{ duration: 1, delay: 0.2 }}
                         className="flex-1 w-full"
                     >
-                        <InteractiveStack />
+                        <InteractiveStack cards={cardsData}
+                        />
                     </motion.div>
                 </div>
 

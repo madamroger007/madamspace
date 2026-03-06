@@ -1,53 +1,37 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
-import { Twitter, Instagram, Globe, Github } from "lucide-react";
-import { motion } from "framer-motion";
+import { Twitter, Instagram, Github, Send } from 'lucide-react';
 
 export default function Footer() {
     return (
-        <footer className="pt-24 pb-12 border-t border-white/5 bg-black/50">
-            <div className="container mx-auto px-6 relative">
-                <div className="flex flex-col items-center gap-8 md:gap-12 mb-12 md:mb-16">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-tr from-neon-purple to-neon-blue rounded-lg md:rounded-xl flex items-center justify-center">
-                            <span className="text-white font-syne font-bold text-lg md:text-xl">N</span>
-                        </div>
-                        <span className="text-xl md:text-2xl font-syne font-bold text-white group-hover:neon-text transition-all">
-                            NFT<span className="text-neon-blue">Space</span>
-                        </span>
-                    </Link>
-
-                    {/* Social Icons - Dots in middle */}
-                    <div className="flex items-center gap-6">
-                        {[Twitter, Instagram, Globe, Github].map((Icon, i) => (
-                            <Link
-                                key={i}
-                                href="#"
-                                className="w-4 h-4 rounded-full border border-white/20 hover:border-neon-blue hover:bg-neon-blue transition-all"
-                                aria-label="Social Link"
-                            />
-                        ))}
-                    </div>
-
-                    <div className="w-full h-px bg-white/5" />
-
-                    {/* Bottom links */}
-                    <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6 md:gap-0 text-[9px] md:text-[10px] text-white/20 uppercase tracking-[0.2em] md:tracking-[0.3em] font-bold">
-                        <div className="flex gap-8 md:gap-12">
-                            <Link href="#" className="hover:text-white transition-colors">Twitter</Link>
-                            <Link href="#" className="hover:text-white transition-colors">Telegram</Link>
-                        </div>
-                        <div className="flex gap-8 md:gap-12">
-                            <Link href="#" className="hover:text-white transition-colors">Terms</Link>
-                            <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
-                        </div>
-                    </div>
+        <footer className="pt-24 pb-12 px-6 max-w-7xl mx-auto border-t border-white/5">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-12 mb-12">
+                <div className="space-y-4 text-center md:text-left">
+                    <h1 className="text-3xl font-bold tracking-tighter text-accent-blue">NFT</h1>
+                    <p className="text-white/40 text-sm">Copy Right project | All Rights reserves</p>
                 </div>
 
+                <div className="flex items-center gap-6">
+                    <SocialIcon icon={<Send size={18} />} />
+                    <SocialIcon icon={<Twitter size={18} />} />
+                    <SocialIcon icon={<Github size={18} />} />
+                    <SocialIcon icon={<Instagram size={18} />} />
+                </div>
+
+                <div className="text-center md:text-right space-y-2">
+                    <p className="text-white/60 text-sm hover:text-white cursor-pointer transition-colors">Terms and Conditions</p>
+                    <p className="text-white/40 text-xs">Valorant is a registered trademark of Riot.</p>
+                </div>
             </div>
         </footer>
+    );
+}
+
+function SocialIcon({ icon }: { icon: React.ReactNode }) {
+    return (
+        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-accent-blue hover:text-white transition-all cursor-pointer">
+            {icon}
+        </div>
     );
 }

@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Wallet, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
-  { name: "Home", href: "#" },
-  { name: "Collection", href: "#collection" },
-  { name: "Feature", href: "#feature" },
-  { name: "Help", href: "#help" },
-  { name: "FAQ", href: "#faq" },
+  { name: "Home", href: "/#home" },
+  { name: "About Us", href: "/#about-us" },
+  { name: "Products", href: "/products" },
+  { name: "Help", href: "/#help" },
 ];
 
 export default function Navbar() {
@@ -33,11 +32,11 @@ export default function Navbar() {
       <div className="container mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 bg-gradient-to-tr from-neon-purple to-neon-blue rounded-xl flex items-center justify-center shadow-lg shadow-neon-blue/20">
-            <span className="text-white font-syne font-bold text-xl">N</span>
+          <div className="w-10 h-10 bg-radial-[at_40%_80%] from-[#547792]/20 via-[#000080]/40 to-[#000000]/80 rounded-xl flex items-center justify-center shadow-lg shadow-neon-blue/20">
+            <span className="text-white font-syne font-bold text-xl">M</span>
           </div>
           <span className="text-2xl font-syne font-bold tracking-tight text-white group-hover:neon-text transition-all">
-            NFT<span className="text-neon-blue">Space</span>
+            DM<span className="text-neon-blue">Space</span>
           </span>
         </Link>
 
@@ -54,21 +53,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Right Actions */}
-        <div className="hidden md:flex items-center gap-6">
-          <div className="relative group">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="bg-white/5 border border-white/10 rounded-full py-2 px-10 text-sm focus:outline-none focus:border-neon-blue/50 focus:bg-white/10 transition-all w-48 group-hover:w-64"
-            />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-neon-blue transition-colors" />
-          </div>
-          <button className="flex items-center gap-2 bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-neon-purple/20 hover:scale-105 active:scale-95 transition-all">
-            <Wallet className="w-4 h-4" />
-            Connect Wallet
-          </button>
-        </div>
+
 
         {/* Mobile Toggle */}
         <button
@@ -111,17 +96,7 @@ export default function Navbar() {
                   </Link>
                 </motion.div>
               ))}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: navLinks.length * 0.1 }}
-                className="pt-8"
-              >
-                <button className="flex items-center justify-center gap-2 bg-gradient-to-r from-neon-blue to-neon-purple px-10 py-4 rounded-full font-bold text-lg shadow-xl shadow-neon-purple/20">
-                  <Wallet className="w-6 h-6" />
-                  Connect Wallet
-                </button>
-              </motion.div>
+
             </div>
           </motion.div>
         )}
