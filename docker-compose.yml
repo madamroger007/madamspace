@@ -1,0 +1,139 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: landing-page3d-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  # Next.js default port
+    environment:
+      # Node environment
+      - NODE_ENV=development
+      # Database connection (uses Docker internal DNS)
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/landing_page3d
+      # JWT secret for authentication (CHANGE IN PRODUCTION!)
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      # Resend email configuration
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-noreply@localhost}
+      # App URL for email links
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      # Redis connection for caching
+      - REDIS_URL=redis://cache:6379
+      # Hot-reload settings for Docker (IMPORTANT for dev mode)
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      # Next.js hostname binding
+      - HOSTNAME=0.0.0.0
+    volumes:
+      # Mount source code for hot-reload in development
+      - .:/app
+      # Use anonymous volumes to preserve container's node_modules and .next
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      postgres:
+        condition: service_healthy  # Wait for DB to be ready
+      cache:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+    # Health check to ensure app is running
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ---------------------------------------------------------------------------
+  # DATABASE - PostgreSQL 16
+  # ---------------------------------------------------------------------------
+  # PostgreSQL database for storing application data
+  # Uses Drizzle ORM for database operations
+  # Data persisted in named volume for durability
+  postgres:
+    image: postgres:16-alpine
+    container_name: landing-page3d-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"  # Expose for local development tools (pgAdmin, DBeaver)
+    environment:
+      # PostgreSQL configuration
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=landing_page3d
+      # Performance tuning (adjust based on available resources)
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      # Persist database data
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: Mount init scripts for database setup
+      # - ./docker/init-db:/docker-entrypoint-initdb.d
+    # Health check to ensure DB is accepting connections
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d landing_page3d"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # CACHE - Redis
+  # ---------------------------------------------------------------------------
+  # Redis for caching frequently accessed data
+  # Improves performance by reducing database queries
+  # Also used for session storage and rate limiting
+  cache:
+    image: redis:7-alpine
+    container_name: landing-page3d-cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"  # Expose for local development/debugging
+    volumes:
+      # Persist Redis data (optional for cache, recommended for sessions)
+      - redis_data:/data
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # QUEUE - Redis (Bull/BullMQ)
+  # ---------------------------------------------------------------------------
+  # Separate Redis instance for job queues
+  # Used for background tasks: email sending, image processing, etc.
+  # Keeping queue separate prevents cache eviction from affecting jobs
+  queue:
+    image: redis:7-alpine
+    container_name: landing-page3d-queue
+    restart: unless-stopped
+    ports:
+      - "6380:6379"  # Different port to avoid conflict with cache
+    volumes:
+      # Persist queue data (important for job reliability)
+      - queue_data:/data
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+# Named volumes for data persistence across container restarts
+volumes:
+  # PostgreSQL data - stores all database files
+  postgres_data:
+    driver: local
+  # Redis cache data - stores cached items
+  redis_data:
+    driver: local
+  # Redis queue data - stores pending/completed jobs
+  queue_data:
+    driver: local
