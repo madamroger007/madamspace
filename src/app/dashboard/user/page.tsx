@@ -7,7 +7,7 @@ import {
     UserTable,
     UserModal,
     TokenSection,
-} from '@/src/components/dashboard/users';
+} from './components';
 
 // ─── Loading Spinner ─────────────────────────────────────────────────────────
 

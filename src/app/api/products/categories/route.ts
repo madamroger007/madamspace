@@ -7,7 +7,7 @@ import { requireApiTokenRole } from '@/src/lib/auth/withAuth';
 export async function GET() {
     try {
         const categories = await productService.getCategories();
-        return NextResponse.json({ success: true, categories }, { status: 200 });
+        return NextResponse.json({ success: true, categories:categories }, { status: 200 });
     } catch (error) {
         console.error('Get categories error:', error);
         return NextResponse.json(

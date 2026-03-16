@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { productService } from '@/src/server/services/products';
 import { productSchema } from '@/src/server/validations/products';
-import { requireApiTokenRole } from '@/src/lib/auth/withAuth';
+import {  requireApiTokenRole } from '@/src/lib/auth/withAuth';
 import { processAndUploadImage } from '@/src/server/utils/image-upload';
-
 /** GET /api/products — public, list all products */
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
-        const { searchParams } = new URL(request.url);
-        const category = searchParams.get('category');
-
-        const products = category
-            ? await productService.getProductsByCategory(category)
-            : await productService.getProducts();
-
+        const products =  await productService.getProducts();
         return NextResponse.json({ success: true, products }, { status: 200 });
     } catch (error) {
-        console.error('Get products error:', error);
         return NextResponse.json(
             { success: false, message: 'Failed to fetch products' },
             { status: 500 }

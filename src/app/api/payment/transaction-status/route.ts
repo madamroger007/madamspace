@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSession } from '@/src/lib/auth/withAuth';
-import { MidtransTransactionResponse } from '@/src/types/type';
+import { midtransProvider } from '@/src/server/providers/midtransProvider';
 
-const MIDTRANS_API_BASE = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-    ? 'https://api.midtrans.com'
-    : 'https://api.sandbox.midtrans.com';
-
-/** GET /api/payment/transaction-status?order_id=xxx — requires session */
+/** GET /api/payment/transaction-status?order_id=xxx — public checkout status check */
 export async function GET(req: NextRequest) {
-    const auth = await requireSession(req);
-    if (auth instanceof NextResponse) return auth;
-
     const { searchParams } = new URL(req.url);
     const orderId = searchParams.get('order_id');
 
@@ -21,42 +14,14 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    const serverKey = process.env.MIDTRANS_SERVER_KEY;
-    if (!serverKey) {
-        return NextResponse.json(
-            { error: 'Midtrans server key not configured' },
-            { status: 500 }
-        );
-    }
-
     try {
-        const credentials = Buffer.from(`${serverKey}:`).toString('base64');
-
-        const response = await fetch(
-            `${MIDTRANS_API_BASE}/v2/${orderId}/status`,
-            {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Basic ${credentials}`,
-                },
-            }
-        );
-
-        const data: MidtransTransactionResponse = await response.json();
-
-        if (!response.ok) {
-            return NextResponse.json(
-                { error: data.status_message || 'Failed to fetch transaction status' },
-                { status: response.status }
-            );
-        }
+        const data = await midtransProvider.checkTransaction(orderId);
 
         return NextResponse.json(data);
     } catch (err) {
         console.error('[transaction-status]', err);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: err instanceof Error ? err.message : 'Internal server error' },
             { status: 500 }
         );
     }
@@ -66,14 +31,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     const auth = await requireSession(req);
     if (auth instanceof NextResponse) return auth;
-
-    const serverKey = process.env.MIDTRANS_SERVER_KEY;
-    if (!serverKey) {
-        return NextResponse.json(
-            { error: 'Midtrans server key not configured' },
-            { status: 500 }
-        );
-    }
 
     try {
         const { order_ids } = await req.json() as { order_ids: string[] };
@@ -85,22 +42,10 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const credentials = Buffer.from(`${serverKey}:`).toString('base64');
-
         const results = await Promise.all(
             order_ids.map(async (orderId) => {
                 try {
-                    const response = await fetch(
-                        `${MIDTRANS_API_BASE}/v2/${orderId}/status`,
-                        {
-                            method: 'GET',
-                            headers: {
-                                'Accept': 'application/json',
-                                'Authorization': `Basic ${credentials}`,
-                            },
-                        }
-                    );
-                    return await response.json();
+                    return await midtransProvider.checkTransaction(orderId);
                 } catch {
                     return { order_id: orderId, error: 'Failed to fetch' };
                 }

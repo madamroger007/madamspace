@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import FireEffect from "../FireEffect";
 import { Product } from "@/src/types/type";
 import { getYouTubeEmbedUrl } from "../../utils/utils";
+import { useCallback } from "react";
 
 interface InteractiveStackProps {
     cards: Product[];
@@ -21,22 +22,7 @@ export default function InteractiveStack({
     const [stack, setStack] = useState(cards);
     const [isAnimating, setIsAnimating] = useState(false);
 
-    useEffect(() => {
-        setStack(cards);
-        console.log(cards);
-    }, [cards]);
-
-    useEffect(() => {
-        if (stack.length <= 1) return;
-        const interval = setInterval(() => {
-            if (!isAnimating) {
-                swipeCard();
-            }
-        }, 4000);
-        return () => clearInterval(interval);
-    }, [isAnimating, stack.length]);
-
-    const swipeCard = () => {
+    const swipeCard = useCallback(() => {
         if (isAnimating) return;
         setIsAnimating(true);
 
@@ -50,11 +36,21 @@ export default function InteractiveStack({
             });
             setIsAnimating(false);
         }, 3000);
-    };
+    }, [isAnimating]);
 
     const defaultContainerClass = variant === "stack"
         ? "relative h-[400px] md:h-[500px] w-full gap-10 flex items-center justify-center "
         : "relative h-[450px] md:h-[550px] w-full flex items-center justify-center";
+
+    useEffect(() => {
+        const interval = setInterval(swipeCard, 4000);
+        if (isAnimating) return;
+        return () => clearInterval(interval);
+    }, [isAnimating, swipeCard]);
+
+    useEffect(() => {
+        setStack(cards);
+    }, [cards]);
 
     return (
         <div className={containerClassName || defaultContainerClass}>
@@ -98,6 +94,7 @@ export default function InteractiveStack({
                                             className="absolute inset-0 w-full h-full border-0"
                                             allow="autoplay; encrypted-media"
                                             allowFullScreen
+                                            loading="lazy"
                                         />
                                     </div>
                                 ) : (
@@ -105,6 +102,7 @@ export default function InteractiveStack({
                                         src={card.image || "/nft-card-1.png"}
                                         alt={card.name}
                                         fill
+                                        loading="lazy"
                                         className="object-cover transition-transform duration-500 group-hover/fire:scale-110"
                                     />
                                 )}

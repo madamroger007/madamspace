@@ -1,17 +1,16 @@
-import { CartItem, CartState, ProductAction } from "@/src/types/type";
+import { CartItem, CartState, CartAction } from "@/src/types/type";
 
 
 export const initialState: CartState = {
   cart: [],
   checkoutStatus: "idle",
-  snapToken: null,
   loading: false,
   error: null,
 };
 
 export function cartReducer(
   state: CartState,
-  action: ProductAction
+  action: CartAction
 ): CartState {
   switch (action.type) {
     default:
@@ -22,6 +21,9 @@ export function cartReducer(
 
     case "SET_ERROR":
       return { ...state, error: action.payload };
+
+    case "SET_CHECKOUT_STATUS":
+      return { ...state, checkoutStatus: action.payload };
 
     // ── Cart ────────────────────────────────────────────────────────────────
     case "ADD_TO_CART": {
@@ -57,8 +59,13 @@ export function cartReducer(
       return { ...state, cart: updatedCart };
     }
 
+    case "DELETE_FROM_CART": {
+      const updatedCart = state.cart.filter((item) => item.id !== action.payload);
+      return { ...state, cart: updatedCart };
+    }
+
     case "CLEAR_CART":
-      return { ...state, cart: [], snapToken: null, checkoutStatus: "idle" };
+      return { ...state, cart: [], checkoutStatus: "idle" };
 
     case "SET_CART":
       return { ...state, cart: action.payload };

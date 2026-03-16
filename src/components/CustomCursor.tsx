@@ -9,6 +9,8 @@ interface Particle {
     x: number;
     y: number;
     color: string;
+    offsetX: number;
+    offsetY: number;
 }
 
 export default function CustomCursor() {
@@ -27,11 +29,15 @@ export default function CustomCursor() {
 
         // Add particles on move with unique IDs
         const id = `${Date.now()}-${Math.random()}`;
+        const offsetX = (Math.random() - 0.5) * 40;
+        const offsetY = (Math.random() - 0.5) * 40;
         const newParticle: Particle = {
             id,
             x: clientX,
             y: clientY,
             color: Math.random() > 0.5 ? "#00d2ff" : "#e1ff01",
+            offsetX,
+            offsetY,
         };
 
         setParticles((prev) => [...prev.slice(-15), newParticle]);
@@ -53,8 +59,8 @@ export default function CustomCursor() {
                         animate={{
                             opacity: 0,
                             scale: 0,
-                            y: p.y + (Math.random() - 0.5) * 40,
-                            x: p.x + (Math.random() - 0.5) * 40
+                            y: p.y + p.offsetY,
+                            x: p.x + p.offsetX
                         }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}

@@ -1,12 +1,11 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import NavbarDashboard from '@/src/components/dashboard/NavbarDashboard';
-import ImageUploader from '@/src/components/dashboard/products/ImageUploader';
-import { ProductFormData, ProductFormError, Category } from '@/src/components/dashboard/products/types';
+import ImageUploader from '../../components/ImageUploader';
+import { ProductFormData, ProductFormError } from '../../components/types';
 import { createProductAction, updateProductAction } from '@/src/server/actions/products/action';
-import { Product } from '@/src/types/type';
 import { useProductContext } from '@/src/store/context/product/ProductContext';
 import { formErrorStatement } from '@/src/utils/error';
 
@@ -25,27 +24,22 @@ export default function ProductFormPage() {
     const productId = params.id as string;
     const isEdit = productId !== 'new';
     const {
-        setProducts,
+        addProduct,
         updateProduct,
+        categories,
+        products,
     } = useProductContext();
     const [loading, setLoading] = useState(isEdit);
-    const [categories, setCategories] = useState<Category[]>([]);
     const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
     const [formError, setFormError] = useState<ProductFormError>(null);
     const [formLoading, setFormLoading] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
 
     // ── Fetch product if editing ───────────────────────────────────────────
-
-    const fetchProduct = useCallback(async () => {
-        if (!isEdit) return;
-
-        try {
-            const response = await fetch(`/api/products/${productId}`);
-            const data = await response.json();
-
-            if (data.success) {
-                const product: Product = data.product;
+    useEffect(() => {
+        if (isEdit) {
+            const product = products.find((p) => p.id === Number(productId));
+            if (product) {
                 setFormData({
                     name: product.name,
                     price: product.price,
@@ -54,31 +48,10 @@ export default function ProductFormPage() {
                     videoUrl: product.videoUrl || '',
                     category: product.category || '',
                 });
+                setLoading(false);
             }
-        } catch {
-            console.error('Failed to fetch product');
-        } finally {
-            setLoading(false);
         }
-    }, [isEdit, productId]);
-
-    const fetchCategories = useCallback(async () => {
-        try {
-            const response = await fetch('/api/products/categories');
-            const data = await response.json();
-
-            if (data.success) {
-                setCategories(data.categories);
-            }
-        } catch {
-            // Silent fail
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchProduct();
-        fetchCategories();
-    }, [fetchProduct, fetchCategories]);
+    }, [products, productId, isEdit]);
 
     // ── Form handlers ──────────────────────────────────────────────────────
 
@@ -117,7 +90,7 @@ export default function ProductFormPage() {
             } else {
                 const response = await createProductAction(body);
                 formErrorStatement(response, setFormError);
-                setProducts(response);
+                addProduct(response);
             }
 
             router.push('/dashboard/products');

@@ -1,10 +1,10 @@
-import { CartItem, ProductAction, ProductState } from "@/src/types/type";
+import { ProductAction, ProductState } from "@/src/types/type";
 
 
 export const initialState: ProductState = {
   products: [],
+  categories: [],
   checkoutStatus: "idle",
-  snapToken: null,
   loading: false,
   error: null,
 };
@@ -31,18 +31,33 @@ export function productReducer(
         : state.products;
       return { ...state, products: deletedProducts };
 
-    default:
-      return state;
+    case "ADD_PRODUCT":
+      return { ...state, products: [...state.products, action.payload] };
+    // ── Categories ──────────────────────────────────────────────────────────
+
+    case "SET_CATEGORIES":
+      return { ...state, categories: action.payload };
+    case "UPDATE_CATEGORY":
+      const updatedCategories = state.categories.map((item) =>
+        item.id === action.payload.id ? action.payload : item
+      );
+      return { ...state, categories: updatedCategories };
+    case "DELETE_CATEGORY":
+      const existingCategory = state.categories.find((item) => item.id === action.payload);
+      if (!existingCategory) return state;
+      const deletedCategories = existingCategory
+        ? state.categories.filter((item) => item.id !== action.payload)
+        : state.categories;
+      return { ...state, categories: deletedCategories };
+    case "ADD_CATEGORY":
+      return { ...state, categories: [...state.categories, action.payload] };
     // ── Loading and Error ───────────────────────────────────────────────────
     case "SET_LOADING":
       return { ...state, loading: action.payload };
 
     case "SET_ERROR":
       return { ...state, error: action.payload };
-
- 
-
-  
-
+    default:
+      return state;
   }
 }

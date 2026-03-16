@@ -28,7 +28,7 @@ export default function FireEffect() {
                 <div
                     key={i}
                     className="fire-pixel fire-anim"
-                    style={style as any}
+                    style={style}
                 />
             ))}
             <div className="absolute inset-0 bg-gradient-to-t from-orange-600/20 via-transparent to-transparent opacity-50" />

@@ -1,4 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
+import { requireApiToken } from './lib/auth/withAuth'
 
 // Public auth routes that don't require authentication
 const PUBLIC_AUTH_ROUTES = [
@@ -16,7 +17,7 @@ const PUBLIC_API_ROUTES = [
     '/api/health',
 ]
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
     const authToken = request.cookies.get('auth-token')?.value
 
@@ -51,12 +52,10 @@ export function proxy(request: NextRequest) {
 
         // Check for Authorization header (external API requests)
         const authHeader = request.headers.get('Authorization')
+        const auth = await requireApiToken(request);
 
-        if (!authHeader) {
-            return NextResponse.json(
-                { error: 'Unauthorized', message: 'Authorization required' },
-                { status: 401 }
-            )
+        if (!authHeader || auth instanceof NextResponse) {
+            return auth
         }
 
         if (!authHeader.startsWith('Bearer ')) {

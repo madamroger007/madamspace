@@ -14,12 +14,6 @@ export interface AuthContext {
 // Used by: /api/auth/* routes (dashboard session)
 // ============================================================================
 
-/**
- * Require cookie-based JWT session authentication.
- * Used for dashboard routes that require user session.
- * 
- * @returns AuthContext on success, or NextResponse 401 on failure
- */
 export async function requireSession(
     request: NextRequest
 ): Promise<AuthContext | NextResponse> {
@@ -45,12 +39,6 @@ export async function requireSession(
     return { userId: payload.userId, role: payload.role };
 }
 
-/**
- * Require cookie-based session + specific role.
- * Used for admin-only dashboard routes.
- * 
- * @returns AuthContext on success, or NextResponse 401/403 on failure
- */
 export async function requireSessionRole(
     request: NextRequest,
     role: string
@@ -73,17 +61,10 @@ export async function requireSessionRole(
 // Used by: /api/email/*, /api/payment/*, /api/voucher/* (external APIs)
 // ============================================================================
 
-/**
- * Require Bearer token authentication (opaque API token).
- * Used for external API integrations and services.
- * 
- * @returns AuthContext on success, or NextResponse 401 on failure
- */
 export async function requireApiToken(
     request: NextRequest
 ): Promise<AuthContext | NextResponse> {
     const authHeader = request.headers.get('authorization');
-    console.log('Authorization header:', authHeader);
     if (!authHeader?.startsWith('Bearer ')) {
         return NextResponse.json(
             { success: false, message: 'Not authenticated. Bearer token required.' },
@@ -119,12 +100,6 @@ export async function requireApiToken(
     return { userId: user.id, role: user.role };
 }
 
-/**
- * Require Bearer token + specific role.
- * Used for external API endpoints that require admin privileges.
- * 
- * @returns AuthContext on success, or NextResponse 401/403 on failure
- */
 export async function requireApiTokenRole(
     request: NextRequest
 ): Promise<AuthContext | NextResponse> {
@@ -139,15 +114,6 @@ export async function requireApiTokenRole(
 // Accepts both Bearer token and Cookie session — use specific guards instead
 // ============================================================================
 
-/**
- * @deprecated Use `requireSession` for dashboard routes or `requireApiToken` for external APIs.
- * 
- * Extract and validate authentication from either:
- *  1. `Authorization: Bearer <api-token>` header  (opaque DB token)
- *  2. `auth-token` HTTP-only cookie               (JWT session token)
- *
- * Returns AuthContext on success, or a NextResponse 401/403 on failure.
- */
 export async function requireAuth(
     request: NextRequest
 ): Promise<AuthContext | NextResponse> {
@@ -161,12 +127,6 @@ export async function requireAuth(
     return requireSession(request);
 }
 
-/**
- * @deprecated Use `requireSessionRole` for dashboard routes or `requireApiTokenRole` for external APIs.
- * 
- * Convenience: require auth + specific role.
- * Returns AuthContext or NextResponse 401/403.
- */
 export async function requireRole(
     request: NextRequest,
     role: string

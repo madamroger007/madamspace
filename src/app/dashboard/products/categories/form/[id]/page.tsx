@@ -1,10 +1,12 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import NavbarDashboard from '@/src/components/dashboard/NavbarDashboard';
-import { Category, CategoryFormData, CategoryFormError } from '@/src/components/dashboard/products/types';
-import { createCategory, updateCategory } from '@/src/server/actions/products/action';
+import { CategoryFormData, CategoryFormError } from '../../../components/types';
+import { createCategory, updateCategory as updateCategoryAction } from '@/src/server/actions/products/action';
+import { useProductContext } from '@/src/store/context/product/ProductContext';
+import { formErrorStatement } from '@/src/utils/error';
 
 const defaultFormData: CategoryFormData = {
     name: '',
@@ -15,35 +17,28 @@ export default function CategoryFormPage() {
     const params = useParams();
     const categoryId = params.id as string;
     const isEdit = categoryId !== 'new';
-
+    const {
+        addCategory,
+        updateCategory,
+        categories,
+    } = useProductContext();
     const [loading, setLoading] = useState(isEdit);
     const [formData, setFormData] = useState<CategoryFormData>(defaultFormData);
     const [formError, setFormError] = useState<CategoryFormError>(null);
     const [formLoading, setFormLoading] = useState(false);
 
-    // ── Fetch category if editing ──────────────────────────────────────────
-
-    const fetchCategory = useCallback(async () => {
-        if (!isEdit) return;
-
-        try {
-            const response = await fetch(`/api/products/categories/${categoryId}`);
-            const data = await response.json();
-
-            if (data.success) {
-                const category: Category = data.category;
-                setFormData({ name: category.name });
-            }
-        } catch {
-            console.error('Failed to fetch category');
-        } finally {
-            setLoading(false);
-        }
-    }, [isEdit, categoryId]);
-
     useEffect(() => {
-        fetchCategory();
-    }, [fetchCategory]);
+        if (isEdit) {
+            const category = categories.find((cat) => cat.id === Number(categoryId));
+            if (category) {
+                setFormData({
+                    name: category.name,
+                });
+
+                setLoading(false);
+            }
+        }
+    }, [categories, categoryId, isEdit]);
 
     // ── Form handlers ──────────────────────────────────────────────────────
 
@@ -58,20 +53,20 @@ export default function CategoryFormPage() {
         setFormError(null);
 
         try {
-            const data = isEdit
-                ? await updateCategory(Number(categoryId), formData)
-                : await createCategory(formData);
+            const body = {
+                ...formData,
 
-            if (!data.success) {
-                if (data.errors) {
-                    setFormError(data.errors);
-                } else {
-                    setFormError({
-                        formErrors: [data.message || 'Operation failed'],
-                        fieldErrors: {},
-                    });
-                }
-                return;
+            };
+
+            if (isEdit) {
+                const response = await updateCategoryAction(Number(categoryId), body);
+                formErrorStatement(response, setFormError);
+
+                updateCategory(response.category);
+            } else {
+                const response = await createCategory(body);
+                formErrorStatement(response, setFormError);
+                addCategory(response.category);
             }
 
             router.push('/dashboard/products/categories');

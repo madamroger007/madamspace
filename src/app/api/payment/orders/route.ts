@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSession } from '@/src/lib/auth/withAuth';
 import { ordersRepository } from '@/src/server/repositories/orders';
 import { MidtransTransactionResponse } from '@/src/types/type';
-
-const MIDTRANS_API_BASE = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-    ? 'https://api.midtrans.com'
-    : 'https://api.sandbox.midtrans.com';
+import { midtransProvider } from '@/src/server/providers/midtransProvider';
+import { extractPaymentPersistenceFields } from '@/src/utils/payment';
 
 /** GET /api/payment/orders — get all orders with optional Midtrans sync */
 export async function GET(req: NextRequest) {
@@ -14,6 +12,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const sync = searchParams.get('sync') === 'true';
+    const backfill = searchParams.get('backfill') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     try {
@@ -21,49 +20,37 @@ export async function GET(req: NextRequest) {
 
         // Optionally sync with Midtrans to get latest status
         if (sync && orders.length > 0) {
-            const serverKey = process.env.MIDTRANS_SERVER_KEY;
-            if (serverKey) {
-                const credentials = Buffer.from(`${serverKey}:`).toString('base64');
+            const candidateOrders = orders.filter(
+                (order) =>
+                    order.transactionStatus === 'pending' ||
+                    !order.transactionStatus ||
+                    (backfill && (!order.paymentName || !order.paymentVa))
+            );
 
-                // Sync status for orders that are still pending
-                const pendingOrders = orders.filter(
-                    o => o.transactionStatus === 'pending' || !o.transactionStatus
-                );
+            await Promise.all(
+                candidateOrders.slice(0, 10).map(async (order) => {
+                    try {
+                        const data = await midtransProvider.checkTransaction(order.orderId) as unknown as MidtransTransactionResponse;
+                        const paymentFields = extractPaymentPersistenceFields(data as unknown as Record<string, unknown>);
 
-                await Promise.all(
-                    pendingOrders.slice(0, 10).map(async (order) => {
-                        try {
-                            const response = await fetch(
-                                `${MIDTRANS_API_BASE}/v2/${order.orderId}/status`,
-                                {
-                                    method: 'GET',
-                                    headers: {
-                                        'Accept': 'application/json',
-                                        'Authorization': `Basic ${credentials}`,
-                                    },
-                                }
-                            );
+                        await ordersRepository.updateFromMidtrans(order.orderId, {
+                            transaction_id: data.transaction_id,
+                            transaction_status: data.transaction_status,
+                            payment_type: data.payment_type,
+                            payment_name: order.paymentName || paymentFields.payment_name || undefined,
+                            payment_va: order.paymentVa || paymentFields.payment_va || undefined,
+                            fraud_status: data.fraud_status,
+                            transaction_time: data.transaction_time,
+                            settlement_time: data.settlement_time,
+                        });
+                    } catch (err) {
+                        console.error(`[orders-sync] Failed to sync ${order.orderId}:`, err);
+                    }
+                })
+            );
 
-                            if (response.ok) {
-                                const data: MidtransTransactionResponse = await response.json();
-                                await ordersRepository.updateFromMidtrans(order.orderId, {
-                                    transaction_id: data.transaction_id,
-                                    transaction_status: data.transaction_status,
-                                    payment_type: data.payment_type,
-                                    fraud_status: data.fraud_status,
-                                    transaction_time: data.transaction_time,
-                                    settlement_time: data.settlement_time,
-                                });
-                            }
-                        } catch (err) {
-                            console.error(`[orders-sync] Failed to sync ${order.orderId}:`, err);
-                        }
-                    })
-                );
-
-                // Refetch orders after sync
-                orders = await ordersRepository.getAllOrders(limit);
-            }
+            // Refetch orders after sync
+            orders = await ordersRepository.getAllOrders(limit);
         }
 
         // Parse items JSON for each order

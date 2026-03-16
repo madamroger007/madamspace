@@ -1,4 +1,4 @@
-import { MidtransTransaction, Product } from "../types/type";
+import { MidtransTransaction } from "../types/type";
 
 
 
@@ -40,6 +40,5 @@ export async function CreateTransaction(payload: MidtransTransaction) {
 
     if (!res.ok) throw new Error("Failed to create transaction");
 
-    const { snap_token } = await res.json();
-    return snap_token;
+    return await res.json();
 }

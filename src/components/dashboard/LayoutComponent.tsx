@@ -29,7 +29,6 @@ export default function DashboardLayoutComponent({
                    
                 });
                 const data = await response.json();
-                console.log('Fetched user data:', data);
                 if (response.ok) {
                     setUser(data.user);
                 }

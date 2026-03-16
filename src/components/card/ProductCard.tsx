@@ -39,6 +39,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
               src={getYouTubeEmbedUrl(product.videoUrl) || ""}
               className="absolute inset-0 w-full h-full border-0 pointer-events-none"
               allow="autoplay; encrypted-media"
+              loading="lazy"
             />
             {/* Overlay to catch clicks and prevent iframe interaction while in grid */}
             <div className="absolute inset-0 z-10" />
@@ -49,6 +50,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
             alt={product.name}
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
           />
         )}
 

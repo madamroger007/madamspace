@@ -72,22 +72,52 @@ export const ordersRepository = {
             transaction_id?: string;
             transaction_status?: string;
             payment_type?: string;
+            payment_name?: string | null;
+            payment_va?: string | null;
             fraud_status?: string;
             transaction_time?: string;
             settlement_time?: string;
         }
     ): Promise<SelectOrder | undefined> {
+        const updateData: Partial<InsertOrder> = {
+            updatedAt: new Date(),
+        };
+
+        if (midtransData.transaction_id !== undefined) {
+            updateData.transactionId = midtransData.transaction_id;
+        }
+
+        if (midtransData.transaction_status !== undefined) {
+            updateData.transactionStatus = midtransData.transaction_status;
+        }
+
+        if (midtransData.payment_type !== undefined) {
+            updateData.paymentType = midtransData.payment_type;
+        }
+
+        if (midtransData.payment_name !== undefined) {
+            updateData.paymentName = midtransData.payment_name;
+        }
+
+        if (midtransData.payment_va !== undefined) {
+            updateData.paymentVa = midtransData.payment_va;
+        }
+
+        if (midtransData.fraud_status !== undefined) {
+            updateData.fraudStatus = midtransData.fraud_status;
+        }
+
+        if (midtransData.transaction_time !== undefined) {
+            updateData.transactionTime = midtransData.transaction_time;
+        }
+
+        if (midtransData.settlement_time !== undefined) {
+            updateData.settlementTime = midtransData.settlement_time;
+        }
+
         const [updated] = await db
             .update(ordersTable)
-            .set({
-                transactionId: midtransData.transaction_id,
-                transactionStatus: midtransData.transaction_status,
-                paymentType: midtransData.payment_type,
-                fraudStatus: midtransData.fraud_status,
-                transactionTime: midtransData.transaction_time,
-                settlementTime: midtransData.settlement_time,
-                updatedAt: new Date(),
-            })
+            .set(updateData)
             .where(eq(ordersTable.orderId, orderId))
             .returning();
 

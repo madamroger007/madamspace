@@ -6,6 +6,8 @@ export const ordersTable = pgTable('orders', {
     grossAmount: integer('gross_amount').notNull(),
     snapToken: text('snap_token'),
     paymentType: text('payment_type'),
+    paymentName: text('payment_name'),
+    paymentVa: text('payment_va'),
     transactionStatus: text('transaction_status').default('pending'),
     transactionId: text('transaction_id'),
     fraudStatus: text('fraud_status'),

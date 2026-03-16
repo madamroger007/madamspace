@@ -64,6 +64,7 @@ export default function PopularCollection() {
                                         className="absolute inset-0 w-full h-full border-0"
                                         allow="autoplay; encrypted-media"
                                         allowFullScreen
+                                        loading="lazy"
                                     />
                                 </div>
                             ) : (
@@ -71,6 +72,7 @@ export default function PopularCollection() {
                                     src={item.image || "/hero-nft.png"}
                                     alt={item.name}
                                     fill
+                                    loading="lazy"
                                     className="object-cover transition-transform duration-1000 group-hover/fire:scale-110"
                                 />
                             )}

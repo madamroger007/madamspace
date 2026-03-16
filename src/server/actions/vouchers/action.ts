@@ -1,4 +1,5 @@
-
+'use server';
+import { cachedVoucherRepository } from '../../repositories/voucher/cached';
 // ─── Vouchers Server Actions ─────────────────────────────────────────────────
 export async function fetchVouchers() {
     const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/voucher`, {
@@ -55,4 +56,28 @@ export async function deleteVoucher(voucherId: number) {
     });
 
     return response.json();
+}
+
+export async function validateVoucherByCode(code: string) {
+    const normalizedCode = code.trim();
+    if (!normalizedCode) {
+        return { valid: false, message: 'Voucher code is required' };
+    }
+
+    const voucher = await cachedVoucherRepository.getVoucherByCode(normalizedCode);
+    if (!voucher) {
+        return { valid: false, message: 'Voucher not found' };
+    }
+
+    const isExpired = new Date(voucher.expiredAt).getTime() < Date.now();
+    if (isExpired) {
+        return { valid: false, message: 'Voucher expired' };
+    }
+
+    return {
+        valid: true,
+        message: 'Voucher applied',
+        code: voucher.code,
+        discountPercent: Number(voucher.discount),
+    };
 }

@@ -1,0 +1,158 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { motion } from "framer-motion";
+import CustomCursor from "@/src/components/CustomCursor";
+import { Orders } from "@/src/types/type";
+import { formatIDR, formatMoneyFromIdr, resolveUserLocaleCurrency } from "@/src/utils/utils";
+import PaymentInstructionsPanel from "./components/payment-instructions-panel";
+import PaymentLoadingState from "./components/payment-loading-state";
+import { getMethodDetails } from "./components/payment-method-details";
+import PaymentOrderActions from "./components/payment-order-actions";
+import PaymentTopInfo from "./components/payment-top-info";
+import { buildPaymentDisplayData, extractPaymentMetaFromStatus, normalizeStatus } from "./components/payment-utils";
+
+export default function PaymentStatusPage() {
+  const { orderId } = useParams();
+  const router = useRouter();
+  const [order, setOrder] = useState<Orders | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [{ locale, currency }] = useState(() => resolveUserLocaleCurrency());
+
+  useEffect(() => {
+    const savedOrders = JSON.parse(localStorage.getItem("pending_orders") || "{}");
+    const foundOrder = savedOrders[orderId as string];
+
+    if (foundOrder) {
+      Promise.resolve().then(() => setOrder(foundOrder));
+      return;
+    }
+
+    setTimeout(() => router.push("/products"), 3000);
+  }, [orderId, router]);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCheckPaymentStatus = async () => {
+    if (!order?.order_id) return;
+
+    setCheckingStatus(true);
+    setStatusMessage("");
+
+    try {
+      const response = await fetch(
+        `/api/payment/transaction-status?order_id=${encodeURIComponent(order.order_id)}`
+      );
+      const data = (await response.json()) as Record<string, unknown>;
+
+      if (!response.ok) {
+        throw new Error((data.error as string) || "Failed to fetch payment status");
+      }
+
+      const nextStatus = normalizeStatus((data.transaction_status as string) || "pending");
+      const nextMeta = extractPaymentMetaFromStatus(data, {
+        preferredPaymentName: order.payment_name,
+      });
+
+      const mergedOrder: Orders = {
+        ...order,
+        status: nextStatus,
+        ...nextMeta,
+      };
+
+      const savedOrders = JSON.parse(localStorage.getItem("pending_orders") || "{}");
+      savedOrders[order.order_id] = mergedOrder;
+      localStorage.setItem("pending_orders", JSON.stringify(savedOrders));
+
+      setOrder(mergedOrder);
+      setStatusMessage(`Latest status: ${String(data.transaction_status || "pending")}`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Failed to check payment status");
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
+
+  if (!order) {
+    return <PaymentLoadingState />;
+  }
+
+  const isSuccess = order.status === "success";
+  const methodDetails = getMethodDetails(order.payment_method);
+  const displayData = buildPaymentDisplayData(order);
+
+  return (
+    <div className="min-h-screen text-white pb-20 bg-dark-bg">
+      <CustomCursor />
+
+      <div className="max-w-3xl mx-auto px-6 pt-12">
+        <Link
+          href="/products"
+          className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mb-8 text-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Marketplace
+        </Link>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[32px] overflow-hidden"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.01)",
+            boxShadow: "0 40px 100px rgba(0,0,0,0.5)",
+          }}
+        >
+          <PaymentTopInfo order={order} isSuccess={isSuccess} methodDetails={methodDetails} />
+
+          <div className="p-8 md:p-12 text-center bg-white/1">
+            <div className="mb-8">
+              <p className="text-white/30 text-xs uppercase tracking-[0.3em] font-bold mb-3">Order Total</p>
+              <h1 className="text-5xl md:text-6xl font-syne font-bold text-transparent bg-clip-text bg-linear-to-r from-neon-blue to-purple-400">
+                {formatMoneyFromIdr(order.gross_amount, { locale, currency })}
+              </h1>
+              <p className="text-xs text-white/40 mt-2">Charged in IDR: {formatIDR(order.gross_amount)}</p>
+            </div>
+
+            <div className="max-w-xs mx-auto space-y-4">
+              <PaymentInstructionsPanel
+                isSuccess={isSuccess}
+                instructions={methodDetails.instructions}
+                displayData={displayData}
+                store={order.store}
+              />
+
+              <PaymentOrderActions
+                orderId={order.order_id}
+                copied={copied}
+                onCopy={() => copyToClipboard(order.order_id)}
+                isSuccess={isSuccess}
+                checkingStatus={checkingStatus}
+                onCheckStatus={handleCheckPaymentStatus}
+                statusMessage={statusMessage}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="mt-8 flex justify-between px-4 text-[10px] uppercase tracking-widest text-white/20 font-black">
+          <div>Trx Date: {new Date(order.createdAt).toLocaleDateString()}</div>
+          <div className="inline-flex items-center gap-2">
+            <ShoppingBag className="w-3 h-3" />
+            Secured by Midtrans
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

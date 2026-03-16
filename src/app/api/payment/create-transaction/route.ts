@@ -1,82 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Item, MidtransTransaction } from '@/src/types/type';
-import { requireApiToken } from '@/src/lib/auth/withAuth';
-import { ordersRepository } from '@/src/server/repositories/orders';
+import { NextRequest, NextResponse } from "next/server";
+import { MidtransTransaction } from "@/src/types/type";
+import { ordersRepository } from "@/src/server/repositories/orders";
+import { createPaymentWithCoreApi } from "@/src/server/services/payment";
 
-const MIDTRANS_API_URL = 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-
-/** POST /api/payment/create-transaction — requires Bearer token */
+/** POST /api/payment/create-transaction — Core API charge flow */
 export async function POST(req: NextRequest) {
-    const auth = await requireApiToken(req);
-    if (auth instanceof NextResponse) return auth;
-
     try {
         const body: MidtransTransaction = await req.json();
         const { order_id, gross_amount, items, customer } = body;
+        console.log("[create-transaction] Received payload:", body);
+        const paymentResult = await createPaymentWithCoreApi(body);
 
-        const serverKey = process.env.MIDTRANS_SERVER_KEY;
-        if (!serverKey) {
-            return NextResponse.json({ error: 'Midtrans server key not configured' }, { status: 500 });
-        }
-
-        const credentials = Buffer.from(`${serverKey}:`).toString('base64');
-
-        const midtransRes = await fetch(MIDTRANS_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Basic ${credentials}`,
-            },
-            body: JSON.stringify({
-                transaction_details: { order_id, gross_amount },
-                item_details: items.map((item: Item) => ({
-                    id: item.id,
-                    name: item.name,
-                    image: item.image ?? '/nft-card-1.png',
-                    price: item.price,
-                    quantity: item.quantity,
-                })),
-                customer_details: customer
-                    ? {
-                        name: customer.name ?? 'Customer',
-                        email: customer.email ?? 'customer@example.com',
-                        phone: customer.phone ?? '081234567890',
-                    }
-                    : undefined,
-            }),
-        });
-
-        if (!midtransRes.ok) {
-            const errBody = await midtransRes.text();
-            console.error('[Midtrans API error]', errBody);
-            return NextResponse.json(
-                { error: 'Midtrans transaction failed', detail: errBody },
-                { status: midtransRes.status }
-            );
-        }
-
-        const data = await midtransRes.json();
-
-        // Save order to database
         try {
             await ordersRepository.createOrder({
                 orderId: order_id,
                 grossAmount: gross_amount,
-                snapToken: data.token,
+                snapToken: null,
                 items: JSON.stringify(items),
                 customerName: customer?.name,
                 customerEmail: customer?.email,
                 customerPhone: customer?.phone,
-                transactionStatus: 'pending',
+                transactionStatus: paymentResult.transaction_status,
+                paymentType: paymentResult.payment_method,
+                paymentName: paymentResult.payment_name,
+                paymentVa: paymentResult.payment_va,
+                transactionId: (paymentResult.payment_data.transaction_id as string | undefined) || null,
             });
         } catch (dbError) {
-            console.error('[create-transaction] Failed to save order:', dbError);
-            // Continue even if DB save fails - transaction was created in Midtrans
+            console.error("[create-transaction] Failed to save order:", dbError);
         }
 
-        return NextResponse.json({ snap_token: data.token });
+        return NextResponse.json({
+            order_id: paymentResult.order_id,
+            status: paymentResult.transaction_status,
+            payment_method: paymentResult.payment_method,
+            payment_data: paymentResult.payment_data,
+        });
     } catch (err) {
-        console.error('[create-transaction]', err);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error("[create-transaction]", err);
+
+        const message = err instanceof Error ? err.message : "Internal server error";
+        const isClientError =
+            message.includes("not enabled") ||
+            message.includes("requires") ||
+            message.includes("missing") ||
+            message.includes("invalid");
+
+        return NextResponse.json(
+            { error: message },
+            { status: isClientError ? 400 : 500 }
+        );
     }
 }

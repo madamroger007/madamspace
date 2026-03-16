@@ -6,7 +6,6 @@ import React, {
     useReducer,
     useCallback,
     useEffect,
-    useRef,
 } from "react";
 import { cartReducer, initialState } from "./cartReducer";
 import type {
@@ -16,23 +15,6 @@ import type {
     MidtransTransaction,
 } from "@/src/types/type";
 import { CreateTransaction, sendLinkEmailPayment } from "@/src/server/actions/payment/action";
-
-// ── Snap.js type augmentation ────────────────────────────────────────────────
-declare global {
-    interface Window {
-        snap?: {
-            pay: (
-                token: string,
-                options?: {
-                    onSuccess?: (result: unknown) => void;
-                    onPending?: (result: unknown) => void;
-                    onError?: (result: unknown) => void;
-                    onClose?: () => void;
-                }
-            ) => void;
-        };
-    }
-}
 
 // ── Context shape ─────────────────────────────────────────────────────────────
 type CartContextValue = {
@@ -44,11 +26,14 @@ type CartContextValue = {
     // Actions
     addToCart: (product: Product) => void;
     removeFromCart: (productId: number) => void;
+    deleteFromCart: (productId: number) => void;
     clearCart: () => void;
     checkout: (
         customer?: MidtransTransaction["customer"],
-        payment_method?: string
-    ) => Promise<{ order_id: string; snap_token: string } | null>;
+        grossAmount?: number,
+        payment_method?: string,
+        card_token_id?: string
+    ) => Promise<{ order_id: string; status: string; payment_data: Record<string, unknown> } | null>;
     loading: boolean;
     error: string | null;
 };
@@ -59,19 +44,6 @@ const CartContext = createContext<CartContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function CartProvider({ children }: { children: React.ReactNode }) {
     const [state, dispatch] = useReducer(cartReducer, initialState);
-    const snapScriptLoaded = useRef(false);
-    // Load Midtrans Snap.js once
-    useEffect(() => {
-        if (snapScriptLoaded.current) return;
-        const clientKey =
-            process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ?? "SB-Mid-client-demo";
-        const script = document.createElement("script");
-        script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
-        script.setAttribute("data-client-key", clientKey);
-        script.async = true;
-        document.head.appendChild(script);
-        snapScriptLoaded.current = true;
-    }, []);
 
     // Seed products on first mount and load cart from localStorage
     useEffect(() => {
@@ -107,6 +79,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: "REMOVE_FROM_CART", payload: productId });
     }, []);
 
+    const deleteFromCart = useCallback((productId: number) => {
+        dispatch({ type: "DELETE_FROM_CART", payload: productId });
+    }, []);
+
     const clearCart = useCallback(() => {
         dispatch({ type: "CLEAR_CART" });
     }, []);
@@ -114,8 +90,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const checkout = useCallback(
         async (
             customer?: MidtransTransaction["customer"],
-            payment_method?: string
-        ): Promise<{ order_id: string; snap_token: string } | null> => {
+            grossAmount?: number,
+            payment_method?: string,
+            card_token_id?: string
+        ): Promise<{ order_id: string; status: string; payment_data: Record<string, unknown> } | null> => {
             if (state.cart.length === 0) return null;
 
             dispatch({ type: "SET_CHECKOUT_STATUS", payload: "loading" });
@@ -123,7 +101,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             try {
                 const payload: MidtransTransaction = {
                     order_id: `ORDER-${Date.now()}`,
-                    gross_amount: cartTotal,
+                    gross_amount: grossAmount ?? cartTotal,
                     items: state.cart.map((item: CartItem) => ({
                         id: item.id,
                         name: item.name,
@@ -132,11 +110,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                     })),
                     customer,
                     payment_method,
+                    card_token_id,
                 };
 
 
-                const snap_token = await CreateTransaction(payload);
-                if (snap_token && customer?.email) {
+                const transaction = await CreateTransaction(payload);
+                if (customer?.email) {
                     await sendLinkEmailPayment(payload)
                 }
 
@@ -144,25 +123,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 // Save order for persistence (mock DB in localStorage)
                 const pendingOrder = {
                     ...payload,
-                    snap_token,
+                    ...(transaction.payment_data || {}),
                     createdAt: new Date().toISOString(),
-                    status: "pending"
+                    status: transaction.status || "pending"
                 };
                 const existingOrders = JSON.parse(localStorage.getItem("pending_orders") || "{}");
                 existingOrders[payload.order_id] = pendingOrder;
                 localStorage.setItem("pending_orders", JSON.stringify(existingOrders));
 
-                dispatch({ type: "SET_SNAP_TOKEN", payload: snap_token });
                 dispatch({ type: "SET_CHECKOUT_STATUS", payload: "idle" });
 
-                return { order_id: payload.order_id, snap_token };
+                return {
+                    order_id: payload.order_id,
+                    status: transaction.status,
+                    payment_data: transaction.payment_data || {},
+                };
             } catch (err) {
                 console.error("[checkout]", err);
+                dispatch({
+                    type: "SET_ERROR",
+                    payload: err instanceof Error ? err.message : "Checkout failed",
+                });
                 dispatch({ type: "SET_CHECKOUT_STATUS", payload: "error" });
                 return null;
             }
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [state.cart, cartTotal]
     );
 
@@ -175,6 +160,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 cartTotal,
                 addToCart,
                 removeFromCart,
+                deleteFromCart,
                 clearCart,
                 checkout,
                 loading: state.loading,

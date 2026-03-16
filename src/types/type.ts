@@ -4,10 +4,25 @@ export type Orders = {
   order_id: string,
   status: string,
   gross_amount: number,
-  snap_token: string,
+  snap_token?: string,
   customer: Customer,
-  payment_method: string,
-  va_number: string
+  payment_method?: string,
+  payment_name?: string,
+  payment_va?: string,
+  va_number?: string,
+  va_numbers?: Array<{ bank: string; va_number: string }>,
+  biller_code?: string,
+  bill_key?: string,
+  payment_code?: string,
+  transaction_id?: string,
+  bank?: string,
+  masked_card?: string,
+  card_type?: string,
+  store?: string,
+  redirect_url?: string,
+  qris_url?: string,
+  deeplink_url?: string,
+  raw_snap_result?: unknown
 }
 
 export type Customer = {
@@ -25,13 +40,12 @@ export type Item = {
 }
 
 // ─── Product ─────────────────────────────────────────────────────────────────
-export type ProductCategory =
-  | "Artwork"
-  | "Music"
-  | "Photography"
-  | "Sports"
-  | "Videos"
-  | "Virtual Reality";
+export type ProductCategory = {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 
 export type Product = {
@@ -63,18 +77,19 @@ export type MidtransTransaction = {
     phone?: string;
   };
   payment_method?: string;
+  card_token_id?: string;
 };
 
 // ─── State ───────────────────────────────────────────────────────────────────
-export type ProductState = CartState & {
+export type ProductState = Omit<CartState, 'cart'> & {
   products: Product[];
+  categories: ProductCategory[];
 };
 
 // ─── State ───────────────────────────────────────────────────────────────────
 export type CartState = {
   cart: CartItem[];
   checkoutStatus: CheckoutStatus;
-  snapToken: string | null;
   loading: boolean;
   error: string | null;
 };
@@ -83,15 +98,27 @@ export type ProductAction =
   | { type: "UPDATE_PRODUCT"; payload: Product }
   | { type: "SET_PRODUCTS"; payload: Product[] }
   | { type: "DELETE_PRODUCT"; payload: number }
+  | { type: "ADD_PRODUCT"; payload: Product }
+  | { type: "SET_LOADING"; payload: boolean }
+  | { type: "SET_ERROR"; payload: string | null }
+  | { type: "SET_CATEGORIES"; payload: ProductCategory[] }
+  | { type: "UPDATE_CATEGORY"; payload: ProductCategory }
+  | { type: "DELETE_CATEGORY"; payload: number }
+  | { type: "ADD_CATEGORY"; payload: ProductCategory }
+
+  ;
+
+export type CartAction =
   | { type: "ADD_TO_CART"; payload: Product }
   | { type: "REMOVE_FROM_CART"; payload: number } // product id
+  | { type: "DELETE_FROM_CART"; payload: number } // product id
   | { type: "CLEAR_CART" }
   | { type: "SET_CHECKOUT_STATUS"; payload: CheckoutStatus }
-  | { type: "SET_SNAP_TOKEN"; payload: string | null }
   | { type: "SET_CART"; payload: CartItem[] }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
   ;
+
 
 // ── Sort ──────────────────────────────────────────────────────────────────────
 export type SortKey =
@@ -135,18 +162,6 @@ export function sortProducts(products: Product[], key: SortKey): Product[] {
     }
   });
 }
-
-export type CategoryFilter = "All" | ProductCategory;
-
-export const CATEGORIES: CategoryFilter[] = [
-  "All",
-  "Artwork",
-  "Music",
-  "Photography",
-  "Sports",
-  "Videos",
-  "Virtual Reality",
-];
 
 
 export interface User {
@@ -193,7 +208,6 @@ export interface MidtransTransactionResponse {
   signature_key?: string;
   bank?: string;
   va_numbers?: Array<{ bank: string; va_number: string }>;
-  permata_va_number?: string;
   biller_code?: string;
   bill_key?: string;
   acquirer?: string;
@@ -205,4 +219,27 @@ export interface MidtransTransactionResponse {
   currency?: string;
   settlement_time?: string;
   expiry_time?: string;
+}
+
+export type CategoryFilter = "All" | ProductCategory;
+
+export interface Order {
+  id: number;
+  orderId: string;
+  grossAmount: number;
+  snapToken: string | null;
+  paymentType: string | null;
+  paymentName: string | null;
+  paymentVa: string | null;
+  transactionStatus: string | null;
+  transactionId: string | null;
+  fraudStatus: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  items: Item[];
+  createdAt: string;
+  updatedAt: string;
+  transactionTime: string | null;
+  settlementTime: string | null;
 }
