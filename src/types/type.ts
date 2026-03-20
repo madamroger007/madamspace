@@ -241,6 +241,7 @@ export type CategoryFilter = "All" | ProductCategory;
 export interface Order {
   id: number;
   orderId: string;
+  orderLabel: string;
   grossAmount: number;
   snapToken: string | null;
   paymentType: string | null;

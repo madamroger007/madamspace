@@ -1,4 +1,4 @@
-import VoucherPageContent from "../../../components/dashboard/voucher/voucher-page-content";
+import VoucherPageContent from "./components/voucher-page-content";
 
 export default function VoucherPage() {
     return (

@@ -51,19 +51,7 @@ declare global {
 }
 
 function mapPaymentMethodToFeeEstimate(paymentMethod: PaymentMethodValue | "") {
-    switch (paymentMethod) {
-        case "qris":
-            return "qris";
-        case "dana":
-        case "gopay":
-        case "bni_va":
-        case "bri_va":
-        case "mandiri_va":
-        case "seabank":
-            return "va";
-        default:
-            return undefined;
-    }
+    return paymentMethod || undefined;
 }
 
 export default function CheckoutPageClient({ midtransConfig }: CheckoutPageClientProps) {
@@ -268,7 +256,6 @@ export default function CheckoutPageClient({ midtransConfig }: CheckoutPageClien
                 {
                     onSuccess: (response) => {
                         if (!response?.token_id) {
-                            console.log("Midtrans getCardToken response missing token_id:", response);
                             reject(new Error("Failed to get card token from Midtrans."));
                             return;
                         }

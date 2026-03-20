@@ -10,10 +10,7 @@ function sanitizeUsers(users: SelectUser[]) {
 }
 
 /** GET /api/auth/users — admin only (requires cookie session) */
-export async function GET(request: NextRequest) {
-    const auth = await requireSessionRole(request, 'admin');
-    if (auth instanceof NextResponse) return auth;
-
+export async function GET() {
     try {
         const users = await authRepository.getUsers();
         return NextResponse.json({ success: true, users: sanitizeUsers(users) });

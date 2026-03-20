@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import TokenRow from '@/src/components/dashboard/TokenRoww';
 import { KeyIcon } from '@/src/components/icons/iconsComponents';
 import { ApiToken } from './types';
@@ -33,6 +34,20 @@ export function TokenSection({
     onRevoke,
     onCopy,
 }: TokenSectionProps) {
+    const PAGE_SIZE = 10;
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalItems = tokens.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+
+    const paginatedTokens = useMemo(() => {
+        const start = (safeCurrentPage - 1) * PAGE_SIZE;
+        return tokens.slice(start, start + PAGE_SIZE);
+    }, [tokens, safeCurrentPage]);
+
+    const from = totalItems === 0 ? 0 : (safeCurrentPage - 1) * PAGE_SIZE + 1;
+    const to = Math.min(safeCurrentPage * PAGE_SIZE, totalItems);
+
     return (
         <div className="px-4 sm:px-0">
             {/* Header */}
@@ -86,7 +101,7 @@ export function TokenSection({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200/10">
-                            {tokens.map((token) => (
+                            {paginatedTokens.map((token) => (
                                 <TokenRow
                                     key={token.id}
                                     token={token}
@@ -105,6 +120,31 @@ export function TokenSection({
                             )}
                         </tbody>
                     </table>
+                )}
+
+                {!loading && (
+                    <div className="border-t border-gray-200/20 px-6 py-3 flex items-center justify-between">
+                        <p className="text-xs text-gray-300">Showing {from}-{to} of {totalItems}</p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage(Math.max(1, safeCurrentPage - 1))}
+                                disabled={safeCurrentPage <= 1}
+                                className="px-3 py-1.5 text-xs rounded border border-gray-300/30 text-gray-300 disabled:opacity-50"
+                            >
+                                Previous
+                            </button>
+                            <span className="text-xs text-gray-300">Page {safeCurrentPage} / {totalPages}</span>
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))}
+                                disabled={safeCurrentPage >= totalPages}
+                                className="px-3 py-1.5 text-xs rounded border border-gray-300/30 text-gray-300 disabled:opacity-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

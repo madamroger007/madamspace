@@ -13,10 +13,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sync = searchParams.get('sync') === 'true';
     const backfill = searchParams.get('backfill') === 'true';
+    const status = searchParams.get('status');
+    const label = searchParams.get('label');
+    const query = (searchParams.get('q') || '').trim().toLowerCase();
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     try {
-        let orders = await ordersRepository.getAllOrders(limit);
+        let orders = status
+            ? await ordersRepository.getOrdersByStatus(status, limit)
+            : await ordersRepository.getAllOrders(limit);
 
         // Optionally sync with Midtrans to get latest status
         if (sync && orders.length > 0) {
@@ -50,18 +55,86 @@ export async function GET(req: NextRequest) {
             );
 
             // Refetch orders after sync
-            orders = await ordersRepository.getAllOrders(limit);
+            orders = status
+                ? await ordersRepository.getOrdersByStatus(status, limit)
+                : await ordersRepository.getAllOrders(limit);
         }
 
         // Parse items JSON for each order
-        const ordersWithItems = orders.map(order => ({
+        let ordersWithItems = orders.map(order => ({
             ...order,
             items: order.items ? JSON.parse(order.items) : [],
         }));
 
+        if (label) {
+            ordersWithItems = ordersWithItems.filter(
+                (order) => (order.orderLabel || 'progress').toLowerCase() === label.toLowerCase()
+            );
+        }
+
+        if (query) {
+            ordersWithItems = ordersWithItems.filter((order) => {
+                const orderId = (order.orderId || '').toLowerCase();
+                const customerName = (order.customerName || '').toLowerCase();
+                const customerEmail = (order.customerEmail || '').toLowerCase();
+                return (
+                    orderId.includes(query) ||
+                    customerName.includes(query) ||
+                    customerEmail.includes(query)
+                );
+            });
+        }
+
         return NextResponse.json({ orders: ordersWithItems });
     } catch (err) {
         console.error('[orders]', err);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
+}
+
+/** PATCH /api/payment/orders?order_id=xxx — update order workflow label */
+export async function PATCH(req: NextRequest) {
+    const auth = await requireSession(req);
+    if (auth instanceof NextResponse) return auth;
+
+    const { searchParams } = new URL(req.url);
+    const orderId = searchParams.get('order_id');
+
+    if (!orderId) {
+        return NextResponse.json(
+            { error: 'order_id is required' },
+            { status: 400 }
+        );
+    }
+
+    try {
+        const body = await req.json();
+        const orderLabelRaw = typeof body.orderLabel === 'string' ? body.orderLabel : '';
+        const orderLabel = orderLabelRaw.trim().toLowerCase();
+        const allowedLabels = new Set(['progress', 'revisi', 'done']);
+
+        if (!allowedLabels.has(orderLabel)) {
+            return NextResponse.json(
+                { error: 'orderLabel must be one of: progress, revisi, done' },
+                { status: 400 }
+            );
+        }
+
+        const updated = await ordersRepository.updateOrderLabel(orderId, orderLabel);
+
+        if (!updated) {
+            return NextResponse.json(
+                { error: 'Order not found' },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json({ success: true, order: updated });
+    } catch (err) {
+        console.error('[orders-patch]', err);
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }

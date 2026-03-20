@@ -1,6 +1,7 @@
 'use client';
 
 import { deleteInvoices } from '@/src/server/actions/invoice/action';
+import { useDashboardToast } from '@/src/components/dashboard/toast/DashboardToastProvider';
 import { UseInvoiceActionsReturn } from './types';
 
 type UseInvoiceActionsParams = {
@@ -8,6 +9,8 @@ type UseInvoiceActionsParams = {
 };
 
 export function useInvoiceActions({ removeOrder }: UseInvoiceActionsParams): UseInvoiceActionsReturn {
+    const { showToast } = useDashboardToast();
+
     const handleDelete = async (orderId: string) => {
         if (!confirm('Are you sure you want to delete this order?')) {
             return;
@@ -18,6 +21,9 @@ export function useInvoiceActions({ removeOrder }: UseInvoiceActionsParams): Use
 
             if (response.success) {
                 removeOrder(orderId);
+                showToast('Order deleted successfully', 'success', {
+                    onClose: () => window.location.reload(),
+                });
                 return;
             }
 

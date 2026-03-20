@@ -23,7 +23,6 @@ const PROVIDER_NAME_MAP: Record<string, string> = {
     mandiri: "Mandiri",
     ovo: "OVO",
     qris: "QRIS",
-    seabank: "SeaBank",
 };
 
 const GENERIC_PAYMENT_TYPES = new Set(["bank_transfer", "cstore"]);
@@ -65,7 +64,6 @@ function extractVaNumbers(data: Record<string, unknown>) {
         { bank: "bni", value: data.bni_va_number },
         { bank: "bri", value: data.bri_va_number },
         { bank: "cimb", value: data.cimb_va_number },
-        { bank: "seabank", value: data.seabank_va_number },
         { bank: fallbackBank, value: bankTransfer?.va_number },
         { bank: fallbackBank, value: data.va_number },
     ];

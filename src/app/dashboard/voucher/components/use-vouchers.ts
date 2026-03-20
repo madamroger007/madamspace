@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { FecthDataVoucher } from '@/src/utils/FetchData';
+import { fetchVouchers } from '@/src/server/actions/vouchers/action';
 import { Voucher, VoucherFormData, VoucherFormError, UseVouchersReturn } from './types';
 import { createVoucher, updateVoucher, deleteVoucher as deleteVoucherAction } from '@/src/server/actions/vouchers/action';
+import { useDashboardToast } from '@/src/components/dashboard/toast/DashboardToastProvider';
 
 export function useVouchers(): UseVouchersReturn {
+    const { showToast } = useDashboardToast();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -23,9 +25,9 @@ export function useVouchers(): UseVouchersReturn {
 
     // ── Fetch vouchers ─────────────────────────────────────────────────────
 
-    const fetchVouchers = useCallback(async () => {
+    const fetchVouchersRender = useCallback(async () => {
         try {
-            const response = await FecthDataVoucher();
+            const response = await fetchVouchers();
             setVouchers(response.vouchers);
         } catch {
             setError('An unexpected error occurred');
@@ -35,8 +37,8 @@ export function useVouchers(): UseVouchersReturn {
     }, []);
 
     useEffect(() => {
-        fetchVouchers();
-    }, [fetchVouchers]);
+        fetchVouchersRender();
+    }, [fetchVouchersRender]);
 
     // ── Form handlers ──────────────────────────────────────────────────────
 
@@ -108,6 +110,9 @@ export function useVouchers(): UseVouchersReturn {
                 return;
             }
 
+            showToast('Voucher deleted successfully', 'success', {
+                onClose: () => window.location.reload(),
+            });
             fetchVouchers();
         } catch {
             alert('An unexpected error occurred');

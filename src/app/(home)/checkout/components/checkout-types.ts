@@ -17,7 +17,6 @@ export type PaymentMethodValue =
     | "qris"
     | "dana"
     | "gopay"
-    | "seabank"
     | "credit_card"
     | "bni_va"
     | "bri_va"
@@ -35,7 +34,6 @@ export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
     { value: "qris", label: "QRIS", detail: "Scan QR with your preferred e-wallet or banking app." },
     { value: "dana", label: "DANA", detail: "Pay via DANA app through supported Core API flow." },
     { value: "gopay", label: "GoPay", detail: "Pay using GoPay deeplink or QR instruction." },
-    { value: "seabank", label: "SeaBank", detail: "Bank transfer instruction mapped for SeaBank flow." },
     {
         value: "credit_card",
         label: "Credit Card (MasterCard)",

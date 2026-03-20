@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Item } from "../../types/type";
-import Image from "next/image";
 
 interface EmailTemplateProps {
   items: Item[];
@@ -134,14 +133,18 @@ export function EmailTemplate({ items, name, order_id, total }: EmailTemplatePro
                           borderBottom: "1px solid #eee",
                         }}
                       >
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                           src={item.image || "/placeholder.png"}
                           alt={item.name}
+                          width={50}
+                          height={50}
                           style={{
                             width: "50px",
                             height: "50px",
                             objectFit: "cover",
                             borderRadius: "6px",
+                            display: "block",
                           }}
                         />
                       </td>
@@ -223,7 +226,7 @@ export function EmailTemplate({ items, name, order_id, total }: EmailTemplatePro
                 borderTop: "1px solid #eee",
               }}
             >
-              This is an automated message from <strong>Madamspace</strong>.  
+              This is an automated message from <strong>Madamspace</strong>.
               Please do not reply to this email.
             </td>
           </tr>

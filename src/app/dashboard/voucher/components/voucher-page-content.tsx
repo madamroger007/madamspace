@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import NavbarDashboard from '@/src/components/dashboard/NavbarDashboard';
-import { useVouchers, VoucherTable } from '@/src/components/dashboard/voucher';
+import { useVouchers, VoucherTable } from '@/src/app/dashboard/voucher/components';
 import LoadingSpinner from '@/src/components/loading/loadingSpinner';
 import ErrorDisplay from '@/src/components/errors/errorDisplay';
 

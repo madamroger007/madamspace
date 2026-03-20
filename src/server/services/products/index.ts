@@ -37,6 +37,20 @@ export const productService = {
         if (!product) return null;
         return this.enrichProduct(product);
     },
+    async calculateProductPrice(items: { id: number, quantity: number }[]): Promise<number | null> {
+        let total = 0;
+        for (const item of items) {
+            const product = await cachedProductRepository.getProductById(item.id);
+            if (!product) {
+                console.warn(`[calculateProductPrice] Product with ID ${item.id} not found`);
+                return null; // Or throw an error if you prefer
+            }
+            total += product.price * item.quantity;
+        }
+        return total;
+    },
+
+
 
     async createProduct(data: ProductSchema): Promise<ProductWithTools | { error: string }> {
         const toolIds = data.toolIds ?? [];

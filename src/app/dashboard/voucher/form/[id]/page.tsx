@@ -3,7 +3,7 @@
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import NavbarDashboard from '@/src/components/dashboard/NavbarDashboard';
-import { Voucher, VoucherFormData, VoucherFormError } from '../../../../../components/dashboard/voucher/types';
+import { Voucher, VoucherFormData, VoucherFormError } from '../../components/types';
 import { createVoucher, updateVoucher } from '@/src/server/actions/vouchers/action';
 
 const defaultFormData: VoucherFormData = {

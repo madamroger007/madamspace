@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:seed": "tsx src/server/db/seed/account.ts",
     "db:migrate": "npx drizzle-kit migrate",
+    "db:push": "npx drizzle-kit push",
     "db:studio": "npx drizzle-kit studio",
     "db:generate": "npx drizzle-kit generate",
     "worker:dev": "tsx watch src/server/lib/queue/start-worker.ts"

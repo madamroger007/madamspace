@@ -1,3 +1,5 @@
+'use client';
+import { useMemo, useState } from 'react';
 import { InvoiceTableProps } from './types';
 import { InvoiceStatusBadge } from './invoice-status-badge';
 
@@ -10,6 +12,21 @@ export function InvoiceTable({
     formatCurrency,
     formatDate,
 }: InvoiceTableProps) {
+    const PAGE_SIZE = 10;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalItems = orders.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+
+    const paginatedOrders = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return orders.slice(start, start + PAGE_SIZE);
+    }, [orders, currentPage]);
+
+    const from = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const to = Math.min(currentPage * PAGE_SIZE, totalItems);
+
     if (loading) {
         return (
             <div className="p-8 text-center">
@@ -57,7 +74,7 @@ export function InvoiceTable({
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                    {orders.map((order) => (
+                    {paginatedOrders.map((order) => (
                         <tr
                             key={order.id}
                             className={`hover:bg-gray-50 cursor-pointer ${selectedOrder?.id === order.id ? 'bg-blue-50' : ''}`}
@@ -99,6 +116,29 @@ export function InvoiceTable({
                     ))}
                 </tbody>
             </table>
+
+            <div className="border-t border-gray-200 px-6 py-3 flex items-center justify-between">
+                <p className="text-xs text-gray-500">Showing {from}-{to} of {totalItems}</p>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                        disabled={currentPage <= 1}
+                        className="px-3 py-1.5 text-xs rounded border border-gray-300 disabled:opacity-50"
+                    >
+                        Previous
+                    </button>
+                    <span className="text-xs text-gray-600">Page {currentPage} / {totalPages}</span>
+                    <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage >= totalPages}
+                        className="px-3 py-1.5 text-xs rounded border border-gray-300 disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

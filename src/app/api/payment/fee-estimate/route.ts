@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { midtransProvider } from '@/src/server/providers/midtransProvider';
+import { calculateEstimatedFee } from '@/src/server/lib/paymentFee';
 
 type FeeEstimateRequest = {
     subtotal: number;
     paymentMethod?: string;
     orderId?: string;
 };
-
-function fallbackFeeAmount(subtotal: number, paymentMethod?: string) {
-    const method = (paymentMethod || '').toLowerCase();
-
-    const byMethodPercent: Record<string, number> = {
-        qris: Number(process.env.MIDTRANS_FEE_QRIS_PERCENT || '0.007'),
-        va: Number(process.env.MIDTRANS_FEE_VA_PERCENT || '0.004'),
-        wallet: Number(process.env.MIDTRANS_FEE_WALLET_PERCENT || '0.015'),
-    };
-
-    const percent = byMethodPercent[method] ?? Number(process.env.MIDTRANS_FEE_DEFAULT_PERCENT || '0.01');
-    return Math.round(subtotal * percent);
-}
 
 export async function POST(req: NextRequest) {
     try {
@@ -45,11 +33,11 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const amount = fallbackFeeAmount(subtotal, body.paymentMethod);
+        const estimate = await calculateEstimatedFee(subtotal, body.paymentMethod);
         return NextResponse.json({
-            amount,
+            amount: estimate.totalFee,
             source: 'fallback',
-            message: 'Midtrans fee detail is unavailable pre-payment. Fallback fee policy is used.',
+            message: `Estimated fee uses configured policy and includes VAT (${Math.round(estimate.vatRate * 100)}%).`,
         });
     } catch (error) {
         console.error('[fee-estimate]', error);

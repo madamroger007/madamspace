@@ -76,10 +76,25 @@ export default function PaymentStatusPage() {
         preferredPaymentName: order.payment_name,
       });
 
+      const nextMetaDefined = Object.fromEntries(
+        Object.entries(nextMeta).filter(([, value]) => value !== undefined)
+      ) as Partial<Orders>;
+
+      const rawSnapCandidate = nextMetaDefined.raw_snap_result as Record<string, unknown> | undefined;
+      const hasActionPayload = Array.isArray(rawSnapCandidate?.actions) && rawSnapCandidate.actions.length > 0;
+      const shouldUpdateRawSnap =
+        hasActionPayload ||
+        Boolean(nextMetaDefined.qris_url) ||
+        Boolean(nextMetaDefined.deeplink_url) ||
+        (Array.isArray(nextMetaDefined.va_numbers) && nextMetaDefined.va_numbers.length > 0);
+
       const mergedOrder: Orders = {
         ...order,
         status: nextStatus,
-        ...nextMeta,
+        ...nextMetaDefined,
+        raw_snap_result: shouldUpdateRawSnap
+          ? nextMetaDefined.raw_snap_result
+          : order.raw_snap_result,
       };
 
       const savedOrders = JSON.parse(localStorage.getItem("pending_orders") || "{}");

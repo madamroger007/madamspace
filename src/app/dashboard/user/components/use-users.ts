@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { FecthDataUser } from '@/src/utils/FetchData';
+
 import { User, UserFormData, UserFormError } from './types';
+import { fetchUsers } from '@/src/server/actions/users/action';
+import { useDashboardToast } from '@/src/components/dashboard/toast/DashboardToastProvider';
 
 export function useUsers() {
+    const { showToast } = useDashboardToast();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -23,10 +26,11 @@ export function useUsers() {
 
     // ── Fetch users ────────────────────────────────────────────────────────
 
-    const fetchUsers = useCallback(async () => {
+    const getUsers = useCallback(async () => {
         try {
-            const response = await FecthDataUser();
-            setUsers(response.users);
+            const response = await fetchUsers();
+            console.log('fetchUsers response:', response);
+            setUsers(response.users || []);
         } catch {
             setError('An unexpected error occurred');
         } finally {
@@ -35,8 +39,8 @@ export function useUsers() {
     }, []);
 
     useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
+        getUsers();
+    }, [getUsers]);
 
     // ── Form handlers ──────────────────────────────────────────────────────
 
@@ -113,6 +117,9 @@ export function useUsers() {
                 return;
             }
 
+            showToast('User deleted successfully', 'success', {
+                onClose: () => window.location.reload(),
+            });
             fetchUsers();
         } catch {
             alert('An unexpected error occurred');

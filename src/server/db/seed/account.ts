@@ -23,7 +23,6 @@ async function seed() {
         for (const account of dummyAccounts) {
             await authService.registerUser(account);
         }
-        console.log("Account seed data created successfully");
     } catch (error) {
         console.error("Error seeding accounts:", error);
         throw error;

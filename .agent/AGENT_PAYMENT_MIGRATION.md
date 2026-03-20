@@ -15,7 +15,6 @@ The system must support the following payment methods:
 * QRIS
 * DANA
 * GoPay
-* SeaBank
 * Credit Card (MasterCard)
 * PayPal
 * BNI Virtual Account
@@ -120,7 +119,6 @@ src/server/
 | QRIS           | qris          |
 | GoPay          | gopay         |
 | DANA           | ewallet       |
-| SeaBank        | bank_transfer |
 | BNI            | bni_va        |
 | BRI            | bri_va        |
 | Mandiri        | mandiri_va    |

@@ -22,6 +22,7 @@ export const ordersTable = pgTable('orders', {
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     transactionTime: text('transaction_time'),
     settlementTime: text('settlement_time'),
+    orderLabel: text('order_label').notNull().default('progress'),
 });
 
 export type InsertOrder = typeof ordersTable.$inferInsert;

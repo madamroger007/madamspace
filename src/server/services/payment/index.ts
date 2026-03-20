@@ -25,8 +25,6 @@ function resolvePaymentPayload(paymentMethod: string, orderId: string, cardToken
             return { payment_type: "bank_transfer", bank_transfer: { bank: "bni" } };
         case "bri_va":
             return { payment_type: "bank_transfer", bank_transfer: { bank: "bri" } };
-        case "seabank":
-            return { payment_type: "bank_transfer", bank_transfer: { bank: "seabank" }  };
         case "mandiri_va":
             return {
                 payment_type: "echannel",

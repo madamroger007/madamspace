@@ -22,6 +22,15 @@ export const ordersRepository = {
             .limit(limit);
     },
 
+    async getOrdersByStatus(status: string, limit: number = 50): Promise<SelectOrder[]> {
+        return await db
+            .select()
+            .from(ordersTable)
+            .where(eq(ordersTable.transactionStatus, status))
+            .orderBy(desc(ordersTable.createdAt))
+            .limit(limit);
+    },
+
     /**
      * Get order by order_id
      */
@@ -57,6 +66,16 @@ export const ordersRepository = {
         const [updated] = await db
             .update(ordersTable)
             .set({ ...data, updatedAt: new Date() })
+            .where(eq(ordersTable.orderId, orderId))
+            .returning();
+
+        return updated;
+    },
+
+    async updateOrderLabel(orderId: string, label: string): Promise<SelectOrder | undefined> {
+        const [updated] = await db
+            .update(ordersTable)
+            .set({ orderLabel: label, updatedAt: new Date() })
             .where(eq(ordersTable.orderId, orderId))
             .returning();
 
