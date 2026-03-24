@@ -6,7 +6,8 @@ import ProductsProviders from "../store/providers/ProductsProviders";
 import { CartProvider } from "../store/context/cart/CartContext";
 import GoogleAnalytics from "../components/analytics/GoogleAnalytics";
 import GoogleAdSense from "../components/analytics/GoogleAdSense";
-
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 const syne = Syne({
   variable: "--font-syne",
   subsets: ["latin"],
@@ -41,6 +42,8 @@ export default function RootLayout({
       <body
         className={`${syne.variable} ${spaceGrotesk.variable} antialiased selection:bg-neon-blue selection:text-white cursor-hidden`}
       >
+        <Analytics />
+        <SpeedInsights />
         <Suspense fallback={null}>
           <GoogleAnalytics measurementId={gaMeasurementId} />
         </Suspense>
