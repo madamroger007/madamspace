@@ -40,6 +40,7 @@ export default function OrderItemsCard({ order }: OrderItemsCardProps) {
                                 <Image
                                     src={item.image || "/nft-card-1.png"}
                                     alt={item.name}
+                                    
                                     loading="lazy"
                                     className=" transition-transform duration-500 group-hover/fire:scale-110 w-full h-full object-cover"
                                 />
