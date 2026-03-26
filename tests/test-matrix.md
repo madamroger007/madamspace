@@ -13,21 +13,21 @@ This matrix aligns implementation with .agent/testing-plan.md and tracks project
   - login: planned
   - logout: planned
   - me: covered
-  - forgot-password: planned
-  - reset-password: planned
+  - forgot-password: covered (integration)
+  - reset-password: covered (integration)
   - token: covered
   - token/[id]: covered
   - users: covered
-  - users/[id]: planned
+  - users/[id]: covered (integration)
 - payment
-  - create-transaction: covered
-  - transaction-status: covered
-  - orders/public: covered
-  - orders: planned
+  - create-transaction: covered (integration)
+  - transaction-status: covered (integration)
+  - orders/public: covered (integration)
+  - orders: covered (integration)
   - orders/send-email: planned
   - webhook/midtrans: planned
   - fee-config: planned
-  - fee-estimate: planned
+  - fee-estimate: covered (integration)
 - products
   - products route: covered (baseline)
   - products/[id]: planned
@@ -57,7 +57,7 @@ This matrix aligns implementation with .agent/testing-plan.md and tracks project
   - payment: planned
   - products/tools/voucher: planned
 - repositories
-  - auth: planned
+  - auth: covered (integration baseline)
   - orders: planned
   - token: planned
   - products/tools/voucher: planned

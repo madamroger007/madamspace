@@ -5,7 +5,7 @@ This folder follows the plan in .agent/testing-plan.md.
 ## Structure
 
 - tests/unit: pure logic/unit-level tests
-- tests/integration: API route and service orchestration tests with mocks
+- tests/integration: real DB/repository integration tests (external providers mocked)
 - tests/e2e: browser journey tests (Playwright phase)
 - tests/fixtures: deterministic test data factories
 - tests/helpers: shared testing helpers
@@ -15,12 +15,16 @@ This folder follows the plan in .agent/testing-plan.md.
 - Auth:
   - withAuth guards
   - auth/me route
+  - auth/forgot-password route (integration, real DB)
+  - auth/reset-password route (integration, real DB)
   - auth/token routes
-  - auth/users route
+  - auth/users and auth/users/[id] routes (integration, real DB)
 - Payment:
-  - create-transaction route
-  - orders/public route
-  - transaction-status route
+  - create-transaction route (integration, real DB)
+  - orders/public route (integration, real DB)
+  - orders route (integration, real DB)
+  - transaction-status route (integration)
+  - fee-estimate route (integration)
 - Product:
   - products route baseline checks
 - Voucher:
@@ -40,3 +44,10 @@ This folder follows the plan in .agent/testing-plan.md.
 - External providers are mocked in integration tests.
 - JWT_SECRET is set in tests/setup.ts for isolated test runtime.
 - No tests require production secrets.
+
+## Integration Requirements
+
+- `POSTGRES_URL` must be set for `pnpm test:integration`.
+- Integration setup is isolated in `tests/integration/setup.ts`.
+- Integration config uses `vitest.integration.config.ts`.
+- Integration runs with `fileParallelism: false` to avoid shared-DB race conditions across suites.

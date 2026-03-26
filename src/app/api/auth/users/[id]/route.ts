@@ -23,7 +23,7 @@ function sanitizeUser(user: Awaited<ReturnType<typeof authRepository.findUserByI
 }
 
 /** GET /api/auth/users/[id] — authenticated (requires cookie session) */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET({ params }: RouteParams) {
     try {
         const auth = await requireSession();
         if (auth instanceof NextResponse) return auth;
@@ -82,7 +82,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 /** DELETE /api/auth/users/[id] — admin only, cannot self-delete (requires cookie session) */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE({ params }: RouteParams) {
     try {
         const auth = await requireSession();
         if (auth instanceof NextResponse) return auth;

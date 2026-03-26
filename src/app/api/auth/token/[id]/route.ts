@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { tokenService } from '@/src/server/services/token';
 import { requireSession } from '@/src/lib/auth/withAuth';
 import { reportErrorToSlack } from '@/src/server/lib/slack-error-reporter';
@@ -8,7 +8,7 @@ interface RouteParams {
 }
 
 /** DELETE /api/auth/token/[id] — revoke a single token by ID (requires cookie session) */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE({ params }: RouteParams) {
     try {
         const auth = await requireSession();
         if (auth instanceof NextResponse) return auth;

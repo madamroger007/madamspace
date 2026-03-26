@@ -4,14 +4,21 @@ import { requireSession } from '@/src/lib/auth/withAuth';
 import { reportErrorToSlack } from '@/src/server/lib/slack-error-reporter';
 
 /** GET /api/auth/token — list own tokens (requires cookie session) */
-export async function GET(request: NextRequest) {
-    void request;
+export async function GET() {
+    try {
+        const auth = await requireSession();
+        if (auth instanceof NextResponse) return auth;
 
-    const auth = await requireSession();
-    if (auth instanceof NextResponse) return auth;
-
-    const tokens = await tokenService.listTokens(auth.userId);
-    return NextResponse.json({ success: true, tokens }, { status: 200 });
+        const tokens = await tokenService.listTokens(auth.userId);
+        return NextResponse.json({ success: true, tokens }, { status: 200 });
+    } catch (error) {
+        console.error('Error in token GET route:', error);
+        await reportErrorToSlack(error, { source: "api.token.get" });
+        return NextResponse.json(
+            { success: false, message: 'Internal server error' },
+            { status: 500 }
+        );
+    }
 }
 
 /** POST /api/auth/token — generate a new API token (requires cookie session) */
@@ -52,10 +59,8 @@ export async function POST(request: NextRequest) {
 }
 
 /** DELETE /api/auth/token — revoke ALL own tokens (requires cookie session) */
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
     try {
-        void request;
-
         const auth = await requireSession();
         if (auth instanceof NextResponse) return auth;
 
